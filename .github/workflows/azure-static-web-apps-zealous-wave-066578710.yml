@@ -19,19 +19,49 @@ jobs:
         with:
           submodules: true
           lfs: false
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: |
+          cd client
+          npm install
+
+      - name: Build the application
+        run: |
+          cd client
+          CI=false npm run build
+
+      - name: Set environment variable
+        run: echo "AZURE_STATIC_WEB_APPS_API_TOKEN=9153cf0a57f363818f2d85841edbcb9695f1e6b36b32dad83f9d95dae4cb301b5-c9a43c2b-7e93-4104-a993-e70c689ecc01010440831" >> $GITHUB_ENV
+
+      - name: List files in build directory
+        run: |
+          ls -la client/build
+
+      - name: Check for index.html in build directory
+        run: |
+          if [ -f "client/build/index.html" ]; then
+            echo "index.html found in build directory"
+          else
+            echo "index.html not found in build directory"
+            exit 1
+          fi
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ZEALOUS_WAVE_066578710 }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "./client" # App source code path
+          app_location: "client" # App source code path
           api_location: "api" # Api source code path - optional
-          output_location: "build" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          output_location: "client/build" # Built app content directory
+          skip_app_build: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -42,5 +72,5 @@ jobs:
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ZEALOUS_WAVE_066578710 }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "close"
